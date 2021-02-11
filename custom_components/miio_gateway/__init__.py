@@ -62,6 +62,7 @@ CONFIG_SCHEMA = vol.Schema({
 SERVICE_JOIN_ZIGBEE = "join_zigbee"
 SERVICE_SCHEMA = vol.Schema({})
 
+
 def setup(hass, config):
     """Setup gateway from config."""
     _LOGGER.info("Starting gateway setup...")
@@ -83,12 +84,14 @@ def setup(hass, config):
     # Zigbee join HASS service helper.
     def join_zigbee_service_handler(service):
         gateway = hass.data[DOMAIN]
-        gateway.send_to_hub({ "method": "start_zigbee_join" })
+        gateway.send_to_hub({"method": "start_zigbee_join"})
+
     hass.services.register(
         DOMAIN, SERVICE_JOIN_ZIGBEE, join_zigbee_service_handler,
         schema=SERVICE_SCHEMA)
 
     return True
+
 
 class XiaomiGw:
     """Gateway socket and communication layer."""
@@ -114,10 +117,11 @@ class XiaomiGw:
         self._pings_sent = 0
 
         self._known_sids = []
-        self._known_sids.append("miio.gateway") # Append self.
+        self._known_sids.append("miio.gateway")  # Append self.
 
         import hashlib, base64
-        self._unique_id = base64.urlsafe_b64encode(hashlib.sha1((self._host + ":" + str(self._port)).encode("utf-8")).digest())[:10].decode("utf-8")
+        self._unique_id = base64.urlsafe_b64encode(
+            hashlib.sha1((self._host + ":" + str(self._port)).encode("utf-8")).digest())[:10].decode("utf-8")
 
         self._create_socket()
         self._init_listener()
@@ -195,7 +199,7 @@ class XiaomiGw:
         """Create thread for loop."""
         _LOGGER.debug("Starting thread...")
         self._thread = Thread(target=self._run_socket_thread, args=())
-        #self._thread.daemon = True
+        # self._thread.daemon = True
         self._thread.start()
         _LOGGER.debug("Starting availability tracker...")
         self._track_availability()
@@ -226,7 +230,7 @@ class XiaomiGw:
                     self._socket.sendto(data, (self._host, self._port))
 
                 self._socket.settimeout(1)
-                data = self._socket.recvfrom(1480)[0] # Will timeout on no data.
+                data = self._socket.recvfrom(1480)[0]  # Will timeout on no data.
 
                 _LOGGER.debug("Received data:")
                 _LOGGER.debug(data)
@@ -275,7 +279,7 @@ class XiaomiGw:
         """Queue ping to keep and check connection."""
         self._pings_sent = self._pings_sent + 1
         self.send_to_hub({"method": "internal.PING"})
-        sleep(6) # Give it `timeout` time to respond...
+        sleep(6)  # Give it `timeout` time to respond...
         if self._pings_sent >= 3:
             self._set_availability(False)
 
@@ -325,7 +329,7 @@ class XiaomiGw:
                         # Extract list to dict
                         params = params[0]
                     if not isinstance(params, dict):
-                        params = { "data": params }
+                        params = {"data": params}
 
                 method = res.get("method")
                 if method.startswith("internal."):
@@ -361,7 +365,8 @@ class XiaomiGw:
         """Callback for receiving sensor event from gateway."""
         _LOGGER.debug("Received event: " + str(model) + " " + str(sid) + " - " + str(event))
         if sid not in self._known_sids:
-            _LOGGER.warning("Received event from unregistered sensor: " + str(model) + " " + str(sid) + " - " + str(event))
+            _LOGGER.warning(
+                "Received event from unregistered sensor: " + str(model) + " " + str(sid) + " - " + str(event))
 
     """Miio."""
 
@@ -376,9 +381,9 @@ class XiaomiGw:
                 self._miio_id = self._miio_id + 2
             if self._miio_id > 999999999:
                 self._miio_id = 1
-            msg = { "id": self._miio_id }
+            msg = {"id": self._miio_id}
             msg.update(data)
-        return([self._miio_id, (json.dumps(msg)).encode()])
+        return ([self._miio_id, (json.dumps(msg)).encode()])
 
     def _miio_msg_decode(self, data):
         """Decode data received from gateway."""
@@ -400,7 +405,7 @@ class XiaomiGw:
 class XiaomiGwDevice(RestoreEntity):
     """A generic device of Gateway."""
 
-    def __init__(self, gw, platform, device_class = None, sid = None, name = None, restore = None):
+    def __init__(self, gw, platform, device_class=None, sid=None, name=None, restore=None):
         """Initialize the device."""
 
         self._gw = gw
@@ -449,14 +454,14 @@ class XiaomiGwDevice(RestoreEntity):
 
     @property
     def device_state_attributes(self):
-        attrs = { ATTR_VOLTAGE: self._voltage, ATTR_LQI: self._lqi, ATTR_MODEL: self._model, ATTR_ALIVE: self._alive }
+        attrs = {ATTR_VOLTAGE: self._voltage, ATTR_LQI: self._lqi, ATTR_MODEL: self._model, ATTR_ALIVE: self._alive}
         return attrs
 
     def _add_push_data_job(self, *args):
         self.hass.add_job(self._push_data, *args)
 
     @callback
-    def _push_data(self, model = None, sid = None, event = None, params = {}):
+    def _push_data(self, model=None, sid=None, event=None, params={}):
         """Push data that came from gateway to parser. Update HA state if any changes were made."""
 
         # If should/need get into real parsing

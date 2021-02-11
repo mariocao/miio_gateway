@@ -1,4 +1,5 @@
 import logging
+
 from datetime import timedelta
 
 from homeassistant.components.binary_sensor import (
@@ -8,6 +9,7 @@ from homeassistant.helpers.event import async_track_point_in_utc_time
 import homeassistant.util.dt as dt_util
 
 from . import DOMAIN, CONF_DATA_DOMAIN, CONF_SENSOR_SID, CONF_SENSOR_CLASS, CONF_SENSOR_NAME, CONF_SENSOR_RESTORE, EVENT_VALUES, XiaomiGwDevice
+from homeassistant.const import STATE_OFF, STATE_ON
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -95,7 +97,7 @@ class XiaomiGwBinarySensor(XiaomiGwDevice, BinarySensorEntity):
 
     @property
     def is_on(self):
-        return self._state
+        return False if self._state == STATE_OFF else True
 
     @property
     def device_class(self):
@@ -109,15 +111,14 @@ class XiaomiGwBinarySensor(XiaomiGwDevice, BinarySensorEntity):
         return attrs
 
     def parse_incoming_data(self, model, sid, event, params):
-
         # Ignore params event for this platform
         if event in IGNORED_EVENTS:
             return False
 
         if event in [EVENT_OPEN, EVENT_NO_CLOSE, EVENT_MOTION, EVENT_LEAK]:
-            self._state = True
+            self._state = STATE_ON
         elif event in [EVENT_CLOSE, EVENT_NO_MOTION, EVENT_NO_LEAK]:
-            self._state = False
+            self._state = STATE_OFF
         else:
             event_type = event.split(".")[1]
             self._gw.hass.bus.fire('miio_gateway.action', {
@@ -141,5 +142,5 @@ class XiaomiGwBinarySensor(XiaomiGwDevice, BinarySensorEntity):
     def _stop_state_timer(self, time):
         """Stop state timer."""
         self._state_timer = None
-        self._state = False
+        self._state = STATE_OFF
         self.schedule_update_ha_state()
