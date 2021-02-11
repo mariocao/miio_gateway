@@ -1,0 +1,10 @@
+{
+  "domain": "miio_gateway",
+  "name": "Miio Gateway by cadavre, packaged for custom repo HACS",
+  "documentation": "https://github.com/aburghelea/miio_gateway",
+  "dependencies": [],
+  "codeowners": ["@cadavre", "@glebsterx", "@aburghelea"],
+  "requirements": [],
+  "config_flow": true
+}
+
