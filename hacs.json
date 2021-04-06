@@ -1,0 +1,5 @@
+{
+    "name": "Miio Gateway by cadavre, packaged for custom repo HACS",
+    "render_readme": true,
+    "domains": ["miio_gateway"]
+}
