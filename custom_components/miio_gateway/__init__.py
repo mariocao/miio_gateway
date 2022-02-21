@@ -275,8 +275,8 @@ class XiaomiGw:
         """Queue ping to keep and check connection."""
         self._pings_sent = self._pings_sent + 1
         self.send_to_hub({"method": "internal.PING"})
-        sleep(6) # Give it `timeout` time to respond...
-        if self._pings_sent >= 3:
+        #sleep(6) # Give it `timeout` time to respond...
+        if self._pings_sent >= 4:
             self._set_availability(False)
 
     """Miio gateway protocol parsing."""
