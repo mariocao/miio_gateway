@@ -1,7 +1,8 @@
 import logging
 
-from homeassistant.const import (
-    TEMP_CELSIUS, DEVICE_CLASS_ILLUMINANCE, DEVICE_CLASS_TEMPERATURE, DEVICE_CLASS_HUMIDITY, DEVICE_CLASS_PRESSURE)
+from homeassistant.const import UnitOfTemperature
+from homeassistant.components.sensor.const import SensorDeviceClass
+
 from homeassistant.components.sensor import (
     DEVICE_CLASSES)
 
@@ -10,10 +11,10 @@ from . import DOMAIN, CONF_DATA_DOMAIN, CONF_SENSOR_SID, CONF_SENSOR_CLASS, CONF
 _LOGGER = logging.getLogger(__name__)
 
 SENSOR_TYPES = {
-    DEVICE_CLASS_ILLUMINANCE: {"unit_of_measurement": "lm", "icon": "mdi:white-balance-sunny"},
-    DEVICE_CLASS_TEMPERATURE: {"unit_of_measurement": TEMP_CELSIUS, "icon": "mdi:thermometer"},
-    DEVICE_CLASS_HUMIDITY: {"unit_of_measurement": "%", "icon": "mdi:water-percent"},
-    DEVICE_CLASS_PRESSURE: {"unit_of_measurement": "hPa", "icon": "mdi:weather-windy"},
+    SensorDeviceClass.ILLUMINANCE: {"unit_of_measurement": "lm", "icon": "mdi:white-balance-sunny"},
+    SensorDeviceClass.TEMPERATURE: {"unit_of_measurement": UnitOfTemperature.CELSIUS, "icon": "mdi:thermometer"},
+    SensorDeviceClass.HUMIDITY: {"unit_of_measurement": "%", "icon": "mdi:water-percent"},
+    SensorDeviceClass.PRESSURE: {"unit_of_measurement": "hPa", "icon": "mdi:weather-windy"},
 }
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
@@ -26,7 +27,7 @@ def setup_platform(hass, config, add_entities, discovery_info=None):
     entities = []
 
     # Gateways's illuminace sensor
-    entities.append(XiaomiGwSensor(gateway, DEVICE_CLASS_ILLUMINANCE, "miio.gateway", "Gateway Illuminance Sensor", False))
+    entities.append(XiaomiGwSensor(gateway, SensorDeviceClass.ILLUMINANCE, "miio.gateway", "Gateway Illuminance Sensor", False))
 
     for cfg in hass.data[CONF_DATA_DOMAIN]:
         if not cfg:
@@ -84,25 +85,25 @@ class XiaomiGwSensor(XiaomiGwDevice):
 
     def parse_incoming_data(self, model, sid, event, params):
         
-        if self._device_class == DEVICE_CLASS_ILLUMINANCE:
+        if self._device_class == SensorDeviceClass.ILLUMINANCE:
             illumination = params.get("illumination")
             if illumination is not None:
                 self._state = illumination
                 return True
 
-        elif self._device_class == DEVICE_CLASS_TEMPERATURE:
+        elif self._device_class == SensorDeviceClass.TEMPERATURE:
             temperature = params.get("temperature")
             if temperature is not None:
                 self._state = round(temperature/100, 1)
                 return True
 
-        elif self._device_class == DEVICE_CLASS_HUMIDITY:
+        elif self._device_class == SensorDeviceClass.HUMIDITY:
             humidity = params.get("humidity")
             if humidity is not None:
                 self._state = round(humidity/100, 1)
                 return True
 
-        elif self._device_class == DEVICE_CLASS_PRESSURE:
+        elif self._device_class == SensorDeviceClass.PRESSURE:
             pressure = params.get("pressure")
             if pressure is not None:
                 self._state = round(pressure/100, 1)

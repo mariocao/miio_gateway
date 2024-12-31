@@ -3,8 +3,8 @@ from datetime import timedelta
 
 from homeassistant.components.media_player import MediaPlayerEntity
 from homeassistant.components.media_player.const import (
-    MEDIA_TYPE_MUSIC, SUPPORT_VOLUME_SET, SUPPORT_VOLUME_MUTE, SUPPORT_PLAY_MEDIA,
-    SUPPORT_PLAY, SUPPORT_STOP)
+    MediaType,
+    MediaPlayerEntityFeature)
 from homeassistant.const import (
     STATE_IDLE, STATE_PLAYING)
 from homeassistant.core import callback
@@ -17,8 +17,8 @@ _LOGGER = logging.getLogger(__name__)
 
 PLAYING_TIME = timedelta(seconds=10)
 
-SUPPORT_PLAYER = SUPPORT_VOLUME_SET | SUPPORT_VOLUME_MUTE | SUPPORT_PLAY_MEDIA |\
-    SUPPORT_PLAY | SUPPORT_STOP
+SUPPORT_PLAYER = MediaPlayerEntityFeature.VOLUME_SET | MediaPlayerEntityFeature.VOLUME_MUTE | MediaPlayerEntityFeature.PLAY_MEDIA |\
+    MediaPlayerEntityFeature.PLAY | MediaPlayerEntityFeature.STOP
 
 def setup_platform(hass, config, add_entities, discovery_info=None):
     _LOGGER.info("Setting up sound player")
@@ -47,6 +47,7 @@ class XiaomiGatewayLight(XiaomiGwDevice, MediaPlayerEntity):
         if result is not None:
             _LOGGER.info("SETTING VOL: " + str(result))
             self._volume = int(result) / 100
+            self.schedule_update_ha_state()
 
     def set_volume_level(self, volume):
         int_volume = int(volume * 100)
@@ -60,7 +61,7 @@ class XiaomiGatewayLight(XiaomiGwDevice, MediaPlayerEntity):
         self.schedule_update_ha_state()
 
     def play_media(self, media_type, media_id, **kwargs):
-        if media_type == MEDIA_TYPE_MUSIC:
+        if media_type == MediaType.MUSIC:
             print(kwargs)
             self._ringtone = media_id
             self.media_play()
@@ -113,7 +114,7 @@ class XiaomiGatewayLight(XiaomiGwDevice, MediaPlayerEntity):
 
     @property
     def media_content_type(self):
-        return MEDIA_TYPE_MUSIC
+        return MediaType.MUSIC
 
     @callback
     def _async_playing_finished(self, now):

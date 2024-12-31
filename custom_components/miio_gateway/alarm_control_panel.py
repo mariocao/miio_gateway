@@ -4,13 +4,10 @@ import homeassistant.components.alarm_control_panel as alarm
 
 from . import DOMAIN, XiaomiGwDevice
 
-from homeassistant.const import (
-    STATE_ALARM_ARMED_AWAY, STATE_ALARM_ARMED_HOME, STATE_ALARM_ARMED_NIGHT,
-    STATE_ALARM_DISARMED, STATE_ALARM_TRIGGERED)
-
-from homeassistant.components.alarm_control_panel.const import (
-    SUPPORT_ALARM_ARM_AWAY, SUPPORT_ALARM_ARM_HOME,
-    SUPPORT_ALARM_ARM_NIGHT, SUPPORT_ALARM_TRIGGER)
+from homeassistant.components.alarm_control_panel import (
+  AlarmControlPanelEntityFeature,
+  AlarmControlPanelState
+)
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -25,9 +22,9 @@ class XiaomiGatewayAlarm(XiaomiGwDevice, alarm.AlarmControlPanelEntity):
 
     def __init__(self, gw):
         XiaomiGwDevice.__init__(self, gw, "alarm_control_panel", None, "miio.gateway", "Gateway Alarm")
-
+        
         # Default to ARMED_AWAY if no volume data was set
-        self._state_by_volume = STATE_ALARM_ARMED_AWAY
+        self._state_by_volume = AlarmControlPanelState.ARMED_AWAY
         self._volume = 80
         # How to alarm
         self._ringtone = 1
@@ -42,52 +39,52 @@ class XiaomiGatewayAlarm(XiaomiGwDevice, alarm.AlarmControlPanelEntity):
 
     def _init_set_arming(self, result):
         if result is not None:
-            _LOGGER.info("SETTING ARMED: " + str(result))
             if result == "on":
                 self._state = self._state_by_volume
             elif result == "off":
-                self._state = STATE_ALARM_DISARMED
+                self._state = AlarmControlPanelState.DISARMED
+            self.schedule_update_ha_state()
 
     def _init_set_volume(self, result):
         if result is not None:
-            _LOGGER.info("SETTING ARMED VOL: " + str(result))
             self._volume = int(result)
             self._state_by_volume = self._get_state_by_volume(self._volume)
             if self._is_armed():
                 self._state = self._state_by_volume
+            self.schedule_update_ha_state()
 
     def alarm_disarm(self, code=None):
         """Send disarm command."""
         self._disarm()
-        self._state = STATE_ALARM_DISARMED
+        self._state = AlarmControlPanelState.DISARMED
         self.schedule_update_ha_state()
 
     def alarm_arm_away(self, code=None):
         """Send arm away command."""
         self._volume = 80
         self._arm()
-        self._state = STATE_ALARM_ARMED_AWAY
+        self._state = AlarmControlPanelState.ARMED_AWAY
         self.schedule_update_ha_state()
 
     def alarm_arm_home(self, code=None):
         """Send arm home command."""
         self._volume = 25
         self._arm()
-        self._state = STATE_ALARM_ARMED_HOME
+        self._state = AlarmControlPanelState.ARMED_HOME
         self.schedule_update_ha_state()
 
     def alarm_arm_night(self, code=None):
         """Send arm night command."""
         self._volume = 15
         self._arm()
-        self._state = STATE_ALARM_ARMED_NIGHT
+        self._state = AlarmControlPanelState.ARMED_NIGHT
         self.schedule_update_ha_state()
 
     def alarm_trigger(self, code=None):
         """Trigger the alarm."""
         self._siren()
         self._blink()
-        self._state = STATE_ALARM_TRIGGERED
+        self._state = AlarmControlPanelState.TRIGGERED
         self.schedule_update_ha_state()
 
     def _arm(self):
@@ -109,25 +106,29 @@ class XiaomiGatewayAlarm(XiaomiGwDevice, alarm.AlarmControlPanelEntity):
         self._send_to_hub({ "method": "set_rgb", "params": [argbhex[1]] })
 
     def _is_armed(self):
-        if self._state is not None or self._state != STATE_ALARM_TRIGGERED or self._state != STATE_ALARM_DISARMED:
+        if self._state is not None and self._state != AlarmControlPanelState.TRIGGERED and self._state != AlarmControlPanelState.DISARMED:
             return True
         return False
 
     def _get_state_by_volume(self, volume):
         if volume < 20:
-            return STATE_ALARM_ARMED_NIGHT
+            return AlarmControlPanelState.ARMED_NIGHT
         elif volume < 30:
-            return STATE_ALARM_ARMED_HOME
+            return AlarmControlPanelState.ARMED_HOME
         else:
-            return STATE_ALARM_ARMED_AWAY
+            return AlarmControlPanelState.ARMED_AWAY
 
     @property
-    def state(self):
+    def alarm_state(self) -> AlarmControlPanelState | None:
         return self._state
-
+        
+    @property
+    def code_arm_required(self) -> bool:
+        return False
+        
     @property
     def supported_features(self) -> int:
-        return SUPPORT_ALARM_ARM_HOME | SUPPORT_ALARM_ARM_AWAY | SUPPORT_ALARM_ARM_NIGHT | SUPPORT_ALARM_TRIGGER
+        return AlarmControlPanelEntityFeature.ARM_HOME | AlarmControlPanelEntityFeature.ARM_AWAY | AlarmControlPanelEntityFeature.ARM_NIGHT | AlarmControlPanelEntityFeature.TRIGGER
 
     def parse_incoming_data(self, model, sid, event, params):
 
@@ -136,7 +137,7 @@ class XiaomiGatewayAlarm(XiaomiGwDevice, alarm.AlarmControlPanelEntity):
             if arming == "on":
                 self._state = self._get_state_by_volume(self._volume)
             elif arming == "off":
-                self._state = STATE_ALARM_DISARMED
+                self._state = AlarmControlPanelState.DISARMED
             return True
 
         alarming_volume = params.get("alarming_volume")

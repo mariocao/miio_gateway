@@ -3,7 +3,9 @@ import binascii
 import struct
 
 from homeassistant.components.light import (
-    LightEntity, ATTR_BRIGHTNESS, ATTR_HS_COLOR, SUPPORT_BRIGHTNESS, SUPPORT_COLOR)
+    LightEntity,
+    ColorMode,
+    ATTR_BRIGHTNESS, ATTR_HS_COLOR)
 import homeassistant.util.color as color_util
 
 from . import DOMAIN, XiaomiGwDevice
@@ -44,8 +46,12 @@ class XiaomiGatewayLight(XiaomiGwDevice, LightEntity):
         return self._hs
 
     @property
-    def supported_features(self):
-        return SUPPORT_BRIGHTNESS | SUPPORT_COLOR
+    def supported_color_modes(self):
+        return {ColorMode.HS}
+        
+    @property
+    def color_mode(self):
+        return ColorMode.HS
     
     def turn_on(self, **kwargs):
         if ATTR_HS_COLOR in kwargs:
@@ -56,7 +62,7 @@ class XiaomiGatewayLight(XiaomiGwDevice, LightEntity):
         argb = (self._brightness,) + rgb
         argbhex = binascii.hexlify(struct.pack("BBBB", *argb)).decode("ASCII")
         argbhex = int(argbhex, 16)
-        
+
         if argbhex <= 16777215:
             self._send_to_hub({ "method": "toggle_light", "params": ["on"] })
         else:
