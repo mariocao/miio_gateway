@@ -1,0 +1,8 @@
+{
+  "name": "Miio Gateway (mieu01)",
+  "render_readme": true,
+  "domain": "miio_gateway",
+  "documentation": "https://github.com/mariocao/miio_gateway",
+  "issue_tracker": "https://github.com/mariocao/miio_gateway/issues",
+  "homeassistant": "2021.12.0"
+}
